@@ -150,6 +150,7 @@
     <div class="brand"><span class="brand-dot"></span>가계부</div>
     <nav id="tabNav">
       <button data-tab="dashboard" class="active">대시보드</button>
+      <button data-tab="income">수입</button>
       <button data-tab="transactions">지출 입력</button>
       <button data-tab="categories">카테고리 관리</button>
       <button data-tab="trends">증감 추이</button>
@@ -165,9 +166,15 @@
 
   <!-- ===== DASHBOARD ===== -->
   <section id="view-dashboard" class="view active">
+    <div class="section-title">
+      <span id="dashMonthLabel">이번 달 요약</span>
+      <div class="btn-row">
+        <select id="dashMonthSelect" onchange="onDashMonthChange()" style="height:38px; border-radius:8px; border:1px solid var(--line); padding:0 10px;"></select>
+      </div>
+    </div>
     <div class="grid grid-4">
       <div class="card">
-        <div class="kpi-label">이번 달 지출 (사용일 기준)</div>
+        <div class="kpi-label">지출 (사용일 기준)</div>
         <div class="kpi-value num" id="kpiThisMonth">0원</div>
         <div class="kpi-sub" id="kpiThisMonthSub">-</div>
       </div>
@@ -185,6 +192,57 @@
         <div class="kpi-label">변동비 합계</div>
         <div class="kpi-value num" id="kpiVariable">0원</div>
         <div class="kpi-sub" id="kpiVariableRatio">총지출 대비 -%</div>
+      </div>
+    </div>
+
+    <div class="section-title">수입 대비 지출·저축·투자<span class="hint">선택한 달 기준</span></div>
+    <div class="grid grid-4">
+      <div class="card">
+        <div class="kpi-label">수입</div>
+        <div class="kpi-value num" id="kpiIncome">0원</div>
+        <div class="kpi-sub"><a href="#" onclick="switchTab('income');return false;">수입 관리 →</a></div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">저축</div>
+        <div class="kpi-value num" id="kpiSavingFlow">0원</div>
+        <div class="kpi-sub" id="kpiSavingFlowRatio">수입 대비 -%</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">투자</div>
+        <div class="kpi-value num" id="kpiInvestFlow">0원</div>
+        <div class="kpi-sub" id="kpiInvestFlowRatio">수입 대비 -%</div>
+      </div>
+      <div class="card">
+        <div class="kpi-label">남는 돈 (수입 - 지출 - 저축 - 투자)</div>
+        <div class="kpi-value num" id="kpiLeftover">0원</div>
+        <div class="kpi-sub" id="kpiLeftoverRatio">수입 대비 -%</div>
+      </div>
+    </div>
+    <div class="card">
+      <div id="incomeBreakdownBar"></div>
+    </div>
+
+    <div class="section-title">
+      저축/투자 입금 기록<span class="hint">적금 자동이체 외 목돈 이체·주식 매수 등</span>
+      <button class="btn secondary" onclick="openTransferModal()">+ 입금 기록 추가</button>
+    </div>
+    <div class="card">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>날짜</th><th>구분</th><th class="right">금액</th><th>메모</th><th></th></tr></thead>
+          <tbody id="transferTableBody"></tbody>
+        </table>
+      </div>
+      <div id="transferEmpty" class="empty" style="display:none;">선택한 달에 기록된 저축/투자 입금이 없습니다.</div>
+    </div>
+
+    <div class="section-title">월별 비교 (최근 6개월)</div>
+    <div class="card">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>월</th><th class="right">수입</th><th class="right">지출</th><th class="right">저축</th><th class="right">투자</th><th class="right">남는 돈</th><th class="right">저축률</th></tr></thead>
+          <tbody id="monthCompareTableBody"></tbody>
+        </table>
       </div>
     </div>
 
@@ -212,7 +270,7 @@
       </div>
     </div>
 
-    <div class="section-title">카테고리별 지출 비중 (이번 달, 사용일 기준)</div>
+    <div class="section-title">카테고리별 지출 비중 (선택한 달, 사용일 기준)</div>
     <div class="card">
       <div id="categoryBreakdown"></div>
     </div>
@@ -220,6 +278,26 @@
     <div class="section-title">예산 대비 실적<span class="hint">카테고리 관리에서 월예산을 설정하면 표시됩니다</span></div>
     <div class="card">
       <div id="budgetProgress"></div>
+    </div>
+  </section>
+
+  <!-- ===== INCOME ===== -->
+  <section id="view-income" class="view">
+    <div class="section-title">
+      수입 항목
+      <button class="btn" onclick="openIncomeModal()">+ 수입 추가</button>
+    </div>
+    <div class="card">
+      <p class="muted" style="margin-top:0;">월급처럼 매월 반복되는 수입은 "매월 반복"으로, 특정 달에만 들어온 용돈·부수입은 "특정 날짜"로 등록하세요.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>항목명</th><th>구분</th><th class="right">금액</th><th>반복</th><th>기간</th><th></th><th></th></tr>
+          </thead>
+          <tbody id="incomeTableBody"></tbody>
+        </table>
+      </div>
+      <div id="incomeEmpty" class="empty" style="display:none;">등록된 수입이 없습니다. "+ 수입 추가"로 시작해보세요.</div>
     </div>
   </section>
 
@@ -457,6 +535,86 @@
 <footer>가계부 · 브라우저(localStorage)에 저장되며, Google Drive 로그인 시 기기 간 동기화됩니다 · 주기적으로 JSON 백업을 권장합니다</footer>
 
 <!-- Transaction Modal -->
+<!-- Income Modal -->
+<div class="overlay" id="incomeOverlay">
+  <div class="modal">
+    <h3 id="incomeModalTitle">수입 추가</h3>
+    <input type="hidden" id="incomeId">
+    <div class="field">
+      <label>항목명</label>
+      <input type="text" id="incomeName" placeholder="예: 월급, 용돈, 부수입">
+    </div>
+    <div class="field">
+      <label>구분</label>
+      <select id="incomeCategory">
+        <option value="급여">급여</option>
+        <option value="용돈">용돈</option>
+        <option value="부수입">부수입</option>
+        <option value="상여">상여/보너스</option>
+        <option value="기타">기타</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>금액</label>
+      <input type="number" id="incomeAmount" placeholder="0">
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="incomeRecurring" checked onchange="onIncomeRecurringChange()">
+      <label for="incomeRecurring">매월 반복되는 수입입니다 (월급 등)</label>
+    </div>
+    <div id="incomeRecurringRow" class="field-row">
+      <div class="field">
+        <label>시작 월</label>
+        <input type="month" id="incomeStartMonth">
+      </div>
+      <div class="field">
+        <label>종료 월 (선택, 비워두면 계속)</label>
+        <input type="month" id="incomeEndMonth">
+      </div>
+    </div>
+    <div id="incomeOneTimeRow" class="field" style="display:none;">
+      <label>받은 날짜</label>
+      <input type="date" id="incomeDate">
+    </div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn" onclick="saveIncome()">저장</button>
+      <button class="btn secondary" onclick="closeModal('incomeOverlay')">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- Transfer (저축/투자 입금) Modal -->
+<div class="overlay" id="transferOverlay">
+  <div class="modal">
+    <h3 id="transferModalTitle">저축/투자 입금 기록</h3>
+    <input type="hidden" id="transferId">
+    <div class="field">
+      <label>날짜</label>
+      <input type="date" id="transferDate">
+    </div>
+    <div class="field">
+      <label>구분</label>
+      <select id="transferType">
+        <option value="saving">저축 (예금/CMA 등 목돈 이체)</option>
+        <option value="invest">투자 (주식/펀드 등 매수 입금)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>금액</label>
+      <input type="number" id="transferAmount" placeholder="0">
+    </div>
+    <div class="field">
+      <label>메모 (선택)</label>
+      <input type="text" id="transferMemo" placeholder="예: 삼성전자 추가매수">
+    </div>
+    <p class="kpi-sub" style="margin-top:-4px;">참고: 적금(자동이체)은 "저축/대출" 탭에 등록해두면 매월 자동 반영되니 여기 따로 기록할 필요 없습니다. 여긴 예금 목돈 이체나 주식 매수처럼 정기 자동계산이 안 되는 입금만 기록하세요.</p>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn" onclick="saveTransfer()">저장</button>
+      <button class="btn secondary" onclick="closeModal('transferOverlay')">취소</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="txOverlay">
   <div class="modal">
     <h3 id="txModalTitle">지출 추가</h3>
@@ -760,6 +918,8 @@ function defaultData(){
       {id: uid(), group:'문화/여가', name:'취미/여가', type:'variable', budget:150000},
     ],
     transactions: [],
+    incomes: [],
+    transfers: [],
     savings: [],
     loans: [],
     holdings: [],
@@ -787,6 +947,8 @@ function loadData(){
     parsed.cashAssets = parsed.cashAssets || [];
     parsed.allocationTargets = parsed.allocationTargets || [];
     parsed.profitThreshold = parsed.profitThreshold ?? 30;
+    parsed.incomes = parsed.incomes || [];
+    parsed.transfers = parsed.transfers || [];
     parsed.lastModified = parsed.lastModified || Date.now();
     return parsed;
   }catch(e){
@@ -1090,11 +1252,13 @@ function catById(id){ return DATA.categories.find(c=>c.id===id); }
 document.getElementById('tabNav').addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-tab]');
   if(!btn) return;
-  document.querySelectorAll('#tabNav button').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.getElementById('view-'+btn.dataset.tab).classList.add('active');
+  switchTab(btn.dataset.tab);
 });
+function switchTab(tab){
+  document.querySelectorAll('#tabNav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+tab).classList.add('active');
+}
 
 function closeModal(id){ document.getElementById(id).classList.remove('active'); }
 
@@ -1226,6 +1390,158 @@ function renderTransactions(){
     </tr>`;
   }).join('');
   document.getElementById('txEmpty').style.display = sorted.length? 'none':'block';
+}
+
+/* ================= INCOME ================= */
+function onIncomeRecurringChange(){
+  const rec = document.getElementById('incomeRecurring').checked;
+  document.getElementById('incomeRecurringRow').style.display = rec? 'flex':'none';
+  document.getElementById('incomeOneTimeRow').style.display = rec? 'none':'block';
+}
+function openIncomeModal(id){
+  document.getElementById('incomeModalTitle').textContent = id? '수입 수정':'수입 추가';
+  document.getElementById('incomeId').value = id||'';
+  if(id){
+    const inc = DATA.incomes.find(x=>x.id===id);
+    document.getElementById('incomeName').value = inc.name;
+    document.getElementById('incomeCategory').value = inc.category;
+    document.getElementById('incomeAmount').value = inc.amount;
+    document.getElementById('incomeRecurring').checked = inc.recurring;
+    document.getElementById('incomeStartMonth').value = inc.startMonth||currentMonthKey();
+    document.getElementById('incomeEndMonth').value = inc.endMonth||'';
+    document.getElementById('incomeDate').value = inc.date||todayStr();
+  }else{
+    document.getElementById('incomeName').value='';
+    document.getElementById('incomeCategory').value='급여';
+    document.getElementById('incomeAmount').value='';
+    document.getElementById('incomeRecurring').checked = true;
+    document.getElementById('incomeStartMonth').value = currentMonthKey();
+    document.getElementById('incomeEndMonth').value = '';
+    document.getElementById('incomeDate').value = todayStr();
+  }
+  onIncomeRecurringChange();
+  document.getElementById('incomeOverlay').classList.add('active');
+}
+function saveIncome(){
+  const id = document.getElementById('incomeId').value;
+  const recurring = document.getElementById('incomeRecurring').checked;
+  const data = {
+    name: document.getElementById('incomeName').value.trim(),
+    category: document.getElementById('incomeCategory').value,
+    amount: Number(document.getElementById('incomeAmount').value)||0,
+    recurring,
+    startMonth: recurring ? (document.getElementById('incomeStartMonth').value || currentMonthKey()) : null,
+    endMonth: recurring ? (document.getElementById('incomeEndMonth').value || null) : null,
+    date: recurring ? null : (document.getElementById('incomeDate').value || todayStr())
+  };
+  if(!data.name || !data.amount){ alert('항목명과 금액은 필수입니다.'); return; }
+  if(id){
+    Object.assign(DATA.incomes.find(i=>i.id===id), data);
+  }else{
+    DATA.incomes.push({id:uid(), ...data});
+  }
+  closeModal('incomeOverlay');
+  saveData();
+}
+function deleteIncome(id){
+  if(!confirm('이 수입 항목을 삭제할까요?')) return;
+  DATA.incomes = DATA.incomes.filter(i=>i.id!==id);
+  saveData();
+}
+function renderIncomes(){
+  const body = document.getElementById('incomeTableBody');
+  body.innerHTML = DATA.incomes.map(inc=>{
+    const period = inc.recurring
+      ? `${inc.startMonth||'-'} ~ ${inc.endMonth||'계속'}`
+      : (inc.date||'-');
+    return `<tr>
+      <td>${inc.name}</td>
+      <td>${inc.category}</td>
+      <td class="right num">${won(inc.amount)}</td>
+      <td>${inc.recurring? '<span class="tag up" style="background:var(--accent-soft); color:var(--accent);">매월</span>' : '<span class="tag">1회</span>'}</td>
+      <td class="num">${period}</td>
+      <td><button class="icon-btn" onclick="openIncomeModal('${inc.id}')">수정</button></td>
+      <td><button class="icon-btn" onclick="deleteIncome('${inc.id}')">삭제</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('incomeEmpty').style.display = DATA.incomes.length? 'none':'block';
+}
+function incomeTotalForMonth(mk){
+  let total = 0;
+  DATA.incomes.forEach(inc=>{
+    if(inc.recurring){
+      if(inc.startMonth && mk >= inc.startMonth && (!inc.endMonth || mk <= inc.endMonth)){
+        total += inc.amount;
+      }
+    }else{
+      if(monthKey(inc.date)===mk) total += inc.amount;
+    }
+  });
+  return total;
+}
+
+/* ================= TRANSFERS (저축/투자 입금 기록) ================= */
+function openTransferModal(id){
+  document.getElementById('transferModalTitle').textContent = id? '저축/투자 입금 수정':'저축/투자 입금 기록';
+  document.getElementById('transferId').value = id||'';
+  if(id){
+    const t = DATA.transfers.find(x=>x.id===id);
+    document.getElementById('transferDate').value = t.date;
+    document.getElementById('transferType').value = t.type;
+    document.getElementById('transferAmount').value = t.amount;
+    document.getElementById('transferMemo').value = t.memo||'';
+  }else{
+    document.getElementById('transferDate').value = todayStr();
+    document.getElementById('transferType').value = 'invest';
+    document.getElementById('transferAmount').value = '';
+    document.getElementById('transferMemo').value = '';
+  }
+  document.getElementById('transferOverlay').classList.add('active');
+}
+function saveTransfer(){
+  const id = document.getElementById('transferId').value;
+  const data = {
+    date: document.getElementById('transferDate').value,
+    type: document.getElementById('transferType').value,
+    amount: Number(document.getElementById('transferAmount').value)||0,
+    memo: document.getElementById('transferMemo').value.trim()
+  };
+  if(!data.date || !data.amount){ alert('날짜와 금액은 필수입니다.'); return; }
+  if(id){
+    Object.assign(DATA.transfers.find(t=>t.id===id), data);
+  }else{
+    DATA.transfers.push({id:uid(), ...data});
+  }
+  closeModal('transferOverlay');
+  saveData();
+}
+function deleteTransfer(id){
+  if(!confirm('이 입금 기록을 삭제할까요?')) return;
+  DATA.transfers = DATA.transfers.filter(t=>t.id!==id);
+  saveData();
+}
+function transferTotalForMonth(mk, type){
+  return DATA.transfers
+    .filter(t=> monthKey(t.date)===mk && t.type===type)
+    .reduce((s,t)=>s+t.amount,0);
+}
+function monthlySavingsContribution(mk){
+  let total = 0;
+  DATA.savings.forEach(s=>{
+    if(s.type!=='installment') return;
+    const startMk = monthKey(s.startDate);
+    const endMk = shiftMonth(s.startDate, s.termMonths).slice(0,7);
+    if(mk >= startMk && mk < endMk) total += s.amount;
+  });
+  return total;
+}
+function monthSummary(mk){
+  const income = incomeTotalForMonth(mk);
+  const expense = DATA.transactions.filter(t=>monthKey(t.useDate)===mk).reduce((s,t)=>s+t.amount,0);
+  const saving = monthlySavingsContribution(mk) + transferTotalForMonth(mk,'saving');
+  const invest = transferTotalForMonth(mk,'invest');
+  const leftover = income - expense - saving - invest;
+  return {income, expense, saving, invest, leftover};
 }
 
 /* ================= CATEGORIES ================= */
@@ -1729,9 +2045,32 @@ function renderPortfolio(){
 }
 
 /* ================= DASHBOARD ================= */
+let selectedDashMonth = null; // null = 이번 달
+
+function monthLabel(mk){
+  const [y,m] = mk.split('-');
+  return `${y}년 ${Number(m)}월`;
+}
+function populateDashMonthSelect(){
+  const sel = document.getElementById('dashMonthSelect');
+  const cur = currentMonthKey();
+  if(!selectedDashMonth) selectedDashMonth = cur;
+  // 최근 18개월 + 데이터에 있는 달 중 그 범위를 벗어나는 달도 포함
+  const monthsSet = new Set(lastNMonthKeys(18));
+  DATA.transactions.forEach(t=>monthsSet.add(monthKey(t.useDate)));
+  DATA.incomes.forEach(i=>{ if(!i.recurring && i.date) monthsSet.add(monthKey(i.date)); });
+  const months = Array.from(monthsSet).sort().reverse();
+  sel.innerHTML = months.map(mk=>`<option value="${mk}" ${mk===selectedDashMonth?'selected':''}>${monthLabel(mk)}${mk===cur?' (이번 달)':''}</option>`).join('');
+}
+function onDashMonthChange(){
+  selectedDashMonth = document.getElementById('dashMonthSelect').value;
+  renderDashboard();
+}
 function renderDashboard(){
-  const curKey = currentMonthKey();
-  const nextKey = nextMonthKey();
+  populateDashMonthSelect();
+  const curKey = selectedDashMonth;
+  const nextKey = shiftMonth(curKey+'-01', 1).slice(0,7);
+  document.getElementById('dashMonthLabel').textContent = `${monthLabel(curKey)} 요약`;
 
   const totalAsset = totalCash() + totalSavingsPaid() + totalHoldingsValue();
   const totalDebt = totalLoanRemaining();
@@ -1759,6 +2098,74 @@ function renderDashboard(){
   document.getElementById('kpiFixedRatio').textContent = `총지출 대비 ${Math.round(fixedTotal/total*100)}%`;
   document.getElementById('kpiVariableRatio').textContent = `총지출 대비 ${Math.round(varTotal/total*100)}%`;
 
+  // ---- 수입 대비 지출/저축/투자 ----
+  const sum = monthSummary(curKey);
+  document.getElementById('kpiIncome').textContent = won(sum.income);
+  document.getElementById('kpiSavingFlow').textContent = won(sum.saving);
+  document.getElementById('kpiInvestFlow').textContent = won(sum.invest);
+  document.getElementById('kpiLeftover').textContent = won(sum.leftover);
+  const incBase = sum.income || 1;
+  document.getElementById('kpiSavingFlowRatio').textContent = `수입 대비 ${Math.round(sum.saving/incBase*100)}%`;
+  document.getElementById('kpiInvestFlowRatio').textContent = `수입 대비 ${Math.round(sum.invest/incBase*100)}%`;
+  document.getElementById('kpiLeftoverRatio').textContent = `수입 대비 ${Math.round(sum.leftover/incBase*100)}%`;
+
+  const ibEl = document.getElementById('incomeBreakdownBar');
+  if(!sum.income){
+    ibEl.innerHTML = '<div class="empty">이 달에 등록된 수입이 없습니다. "수입" 탭에서 먼저 등록해주세요.</div>';
+  }else{
+    const segs = [
+      {label:'지출', val: sum.expense, color:'var(--up)'},
+      {label:'저축', val: sum.saving, color:'var(--accent)'},
+      {label:'투자', val: sum.invest, color:'var(--variable)'},
+      {label:'남는 돈', val: Math.max(0,sum.leftover), color:'var(--down)'},
+    ];
+    const barHtml = segs.map(s=>{
+      const pct = Math.max(0, Math.round(s.val/incBase*100));
+      return pct>0 ? `<div style="width:${pct}%; background:${s.color};" title="${s.label} ${pct}%"></div>` : '';
+    }).join('');
+    const legendHtml = segs.map(s=>{
+      const pct = Math.round(s.val/incBase*100);
+      return `<span style="display:inline-flex; align-items:center; gap:6px; margin-right:16px; font-size:13px;">
+        <span style="width:10px; height:10px; border-radius:3px; background:${s.color}; display:inline-block;"></span>
+        ${s.label} ${won(s.val)} (${pct}%)
+      </span>`;
+    }).join('');
+    ibEl.innerHTML = `
+      <div style="display:flex; width:100%; height:22px; border-radius:8px; overflow:hidden; background:var(--bg); margin-bottom:12px;">${barHtml}</div>
+      <div>${legendHtml}</div>
+    `;
+  }
+
+  // ---- 저축/투자 입금 기록 (선택한 달) ----
+  const transferBody = document.getElementById('transferTableBody');
+  const monthTransfers = DATA.transfers.filter(t=>monthKey(t.date)===curKey).sort((a,b)=>b.date.localeCompare(a.date));
+  transferBody.innerHTML = monthTransfers.map(t=>`
+    <tr>
+      <td class="num">${t.date}</td>
+      <td>${t.type==='saving'?'저축':'투자'}</td>
+      <td class="right num">${won(t.amount)}</td>
+      <td>${t.memo||''}</td>
+      <td><button class="icon-btn" onclick="deleteTransfer('${t.id}')">삭제</button></td>
+    </tr>`).join('');
+  document.getElementById('transferEmpty').style.display = monthTransfers.length? 'none':'block';
+
+  // ---- 월별 비교 (최근 6개월) ----
+  const months6 = lastNMonthKeys(6);
+  const mcBody = document.getElementById('monthCompareTableBody');
+  mcBody.innerHTML = months6.map(mk=>{
+    const s = monthSummary(mk);
+    const rate = s.income ? Math.round((s.saving+s.invest)/s.income*100) : 0;
+    return `<tr ${mk===curKey?'style="background:var(--bg);"':''}>
+      <td class="num">${monthLabel(mk)}</td>
+      <td class="right num">${won(s.income)}</td>
+      <td class="right num">${won(s.expense)}</td>
+      <td class="right num">${won(s.saving)}</td>
+      <td class="right num">${won(s.invest)}</td>
+      <td class="right num"><span class="tag ${s.leftover>=0?'up':'down'}">${won(s.leftover)}</span></td>
+      <td class="right num">${rate}%</td>
+    </tr>`;
+  }).join('');
+
   // category breakdown bars
   const byCat = {};
   thisMonthTx.forEach(t=>{
@@ -1768,7 +2175,7 @@ function renderDashboard(){
   const maxVal = entries.length? entries[0][1] : 1;
   const bdEl = document.getElementById('categoryBreakdown');
   if(!entries.length){
-    bdEl.innerHTML = '<div class="empty">이번 달 지출 내역이 없습니다.</div>';
+    bdEl.innerHTML = '<div class="empty">이 달의 지출 내역이 없습니다.</div>';
   }else{
     bdEl.innerHTML = entries.map(([cid,val])=>{
       const c = catById(cid);
@@ -1928,6 +2335,7 @@ function resetAll(){
 /* ================= RENDER ALL ================= */
 function renderAll(){
   renderTransactions();
+  renderIncomes();
   renderCategories();
   renderTrends();
   renderSavings();
@@ -1938,7 +2346,7 @@ function renderAll(){
   renderPortfolio();
   renderDashboard();
   document.getElementById('backupInfo').textContent =
-    `카테고리 ${DATA.categories.length}개 · 지출 내역 ${DATA.transactions.length}건 · 저축 ${DATA.savings.length}개 · 대출 ${DATA.loans.length}개 · 보유종목 ${DATA.holdings.length}개`;
+    `카테고리 ${DATA.categories.length}개 · 수입 ${DATA.incomes.length}개 · 지출 내역 ${DATA.transactions.length}건 · 저축 ${DATA.savings.length}개 · 대출 ${DATA.loans.length}개 · 보유종목 ${DATA.holdings.length}개`;
 }
 renderAll();
 </script>
