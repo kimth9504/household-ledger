@@ -141,6 +141,14 @@
   footer{text-align:center; color:var(--sub); font-size:12px; padding:30px 20px;}
   .file-input-label{display:inline-block; cursor:pointer;}
 </style>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#0F766E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="가계부">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -1217,6 +1225,10 @@ window.addEventListener('load', ()=>{
       clearInterval(t);
     }
   }, 250);
+  // PWA 설치 가능하게 하기 위한 서비스워커 등록
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
 });
 
 /* ================= UTIL ================= */
