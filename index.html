@@ -141,6 +141,14 @@
   footer{text-align:center; color:var(--sub); font-size:12px; padding:30px 20px;}
   .file-input-label{display:inline-block; cursor:pointer;}
 </style>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#0F766E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="가계부">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -507,6 +515,7 @@
         <button class="btn" id="gSignInBtn" onclick="driveSignIn()">Google 로그인</button>
         <button class="btn secondary" id="gPullBtn" onclick="driveSyncPull()" disabled>⬇ Drive에서 가져오기</button>
         <button class="btn secondary" id="gPushBtn" onclick="driveSyncPush()" disabled>⬆ Drive로 업로드</button>
+        <button class="btn danger" id="gForcePullBtn" onclick="driveForcePull()" disabled>⚠ Drive 원본으로 강제 복원</button>
       </div>
       <div class="checkbox-row" style="margin-top:14px;">
         <input type="checkbox" id="autoSyncToggle" onchange="toggleAutoSync()">
@@ -926,7 +935,7 @@ function defaultData(){
     cashAssets: [],
     allocationTargets: [],
     profitThreshold: 30,
-    lastModified: Date.now()
+    lastModified: 0
   };
 }
 
@@ -1012,6 +1021,7 @@ function initGoogleClient(){
       gAccessToken = resp.access_token;
       document.getElementById('gPullBtn').disabled = false;
       document.getElementById('gPushBtn').disabled = false;
+      document.getElementById('gForcePullBtn').disabled = false;
       setDriveStatus('로그인됨. 동기화 준비 완료.');
       await driveSyncPull(true);
     }
@@ -1143,6 +1153,30 @@ async function driveSyncPush(){
   }
 }
 
+async function driveForcePull(){
+  if(!gAccessToken){ alert('먼저 Google 로그인을 해주세요.'); return; }
+  if(!confirm('현재 화면(이 기기)의 데이터를 전부 버리고, Drive에 저장된 원본 데이터로 덮어씁니다. 계속할까요?')) return;
+  try{
+    setDriveStatus('Drive 원본 데이터 가져오는 중...');
+    const fileId = await driveFindFile();
+    if(!fileId){
+      setDriveStatus('Drive에 저장된 데이터가 없습니다.');
+      return;
+    }
+    const remote = await driveDownloadContent(fileId);
+    DATA = remote;
+    saveData({skipTouch:true, skipAutoSync:true});
+    setDriveStatus('Drive 원본으로 복원 완료 · ' + new Date(remote.lastModified||0).toLocaleString('ko-KR'));
+  }catch(e){
+    if(e.message === 'AUTH_EXPIRED'){
+      setDriveStatus('로그인이 만료되었습니다. 다시 로그인해주세요.');
+      gAccessToken = null;
+    }else{
+      setDriveStatus('복원 실패: ' + e.message);
+    }
+  }
+}
+
 function toggleAutoSync(){
   const on = document.getElementById('autoSyncToggle').checked;
   localStorage.setItem(AUTOSYNC_KEY, on ? '1' : '0');
@@ -1217,6 +1251,10 @@ window.addEventListener('load', ()=>{
       clearInterval(t);
     }
   }, 250);
+  // PWA 설치 가능하게 하기 위한 서비스워커 등록
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
 });
 
 /* ================= UTIL ================= */
